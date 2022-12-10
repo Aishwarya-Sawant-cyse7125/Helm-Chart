@@ -1,0 +1,118 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "appdeployment.name" . }}-webapp
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "appdeployment.name" . }}-webapp
+spec:
+  replicas: {{ .Values.replicaCount }}
+  progressDeadlineSeconds: {{ .Values.progressDeadlineSeconds }}
+  minReadySeconds: {{ .Values.minReadySeconds }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.rollingUpdate.maxUnavailable }}
+  selector:
+    matchLabels:
+      app: {{ include "appdeployment.name" . }}-deployment
+  template:
+    metadata:
+      labels:
+        app: {{ include "appdeployment.name" . }}-deployment
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        - name: regcred
+      {{- end }}
+      initContainers:
+        - name: {{ .Values.initContainer.name }}
+          image: {{ .Values.initContainer.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: FLYWAY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "appdeployment.name" . }}-configmap
+                  key: DB_FLY_ADDRESS
+            - name: FLYWAY_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "appdeployment.name" . }}-secret
+                  key: DB_USER_NAME
+            - name: FLYWAY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "appdeployment.name" . }}-secret
+                  key: DB_PASSWORD
+          args: [{{ .Values.initContainer.args | quote }}]
+      containers:
+        - name: {{ include "appdeployment.name" . }}
+          image: {{ .Values.image.repository }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "appdeployment.name" . }}-secret
+                  key: DB_PASSWORD
+            - name: DB_USER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "appdeployment.name" . }}-secret
+                  key: DB_USER_NAME
+            - name: ELASTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "appdeployment.name" . }}-secret
+                  key: ELASTIC_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: {{ include "appdeployment.name" . }}-configmap
+          ports:
+            - containerPort: {{ .Values.appContainer.containerPort }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probe.readiness.path }}
+              port: {{ .Values.probe.readiness.port }}
+            initialDelaySeconds: {{ .Values.appContainer.initialDelaySeconds }}
+            periodSeconds: {{ .Values.appContainer.periodSeconds }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probe.liveness.path }}
+              port: {{ .Values.probe.liveness.port }}
+            initialDelaySeconds: {{ .Values.appContainer.initialDelaySeconds }}
+            periodSeconds: {{ .Values.appContainer.periodSeconds }}
+          resources:
+            requests:
+              memory: {{ .Values.requests.memory }}
+              cpu: {{ .Values.requests.cpu }}
+            limits:
+              memory: {{ .Values.limits.memory }}
+              cpu: {{ .Values.limits.cpu }}
+      # initContainers:
+      #   - name: {{ .Values.initContainer.name }}
+      #     image: {{ .Values.initContainer.image }}
+      #     imagePullPolicy: {{ .Values.image.pullPolicy }}
+      #     env:
+      #       - name: FLYWAY_URL
+      #         valueFrom:
+      #           configMapKeyRef:
+      #             name: {{ include "appdeployment.name" . }}-configmap
+      #             key: DB_FLY_ADDRESS
+      #       - name: FLYWAY_USER
+      #         valueFrom:
+      #           secretKeyRef:
+      #             name: {{ include "appdeployment.name" . }}-secret
+      #             key: DB_USER_NAME
+      #       - name: FLYWAY_PASSWORD
+      #         valueFrom:
+      #           secretKeyRef:
+      #             name: {{ include "appdeployment.name" . }}-secret
+      #             key: DB_PASSWORD
+      #     args: [{{ .Values.initContainer.args | quote }}]
+          # args: ["-connectRetries=60", "baseline", "repair", "info"]
+          # args: ["-connectRetries=60", "migrate", "repair"]
+          # args: ["-url=jdbc:postgresql://postgres-master:5432/wallet", "-user=test_user", "-password=testuser1234", "-connectRetries=60 migrate"]

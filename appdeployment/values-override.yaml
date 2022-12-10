@@ -1,0 +1,84 @@
+# Override Default values for appdeployment.
+
+# Deployment override variables
+
+# override number of replicas
+replicaCount: 3
+# override number of seconds to wait for deployment to progress
+progressDeadlineSeconds: 300
+# override minimum number of seconds for which pod should be ready 
+minReadySeconds: 30
+
+rollingUpdate:
+  # override no of pods to create above the specified no of replicas
+  maxSurge: 1
+  # override maximum pods which will be unavailable
+  maxUnavailable: 0
+
+image:
+  # webapp docker image
+  repository: csye7125project/webapp:v1
+
+# override secrets for docker to pull a registry cred
+imagePullSecrets: [app: regcred]
+
+# override webapp service variables
+service:
+  name: http
+  type: LoadBalancer
+  port: 80
+  targetPort: 3200
+
+# override configvars variables
+configVars:
+  # flyway address
+  DbFlywayAddress: ""
+  # rds db instance address
+  DbAddress: ""
+  # database name
+  DbName: csye7125
+  # database username
+  DbUserName: Y3N5ZTcxMjU=
+  # database password
+  DbPassword: ""
+  # kakfa broker list name
+  KafkaBroker: ""
+  # Elastic search url
+  ElasticUrl: ""
+  # elastic search username
+  ElasticUsername: elastic
+  # elastic search password
+  ElasticPassword: bFNWRW9GbVZIaVJxOTJtOA==
+  # kafka topic name
+  TopicName: messages
+
+# override variables for app container
+appContainer:
+  containerPort: 3200
+  # Number of seconds after the container has started before liveness or readiness probes are initiated.
+  initialDelaySeconds: 60
+  periodSeconds: 10
+
+# variables for initContainer
+initContainer:
+  # flyway container image
+  image: csye7125project/flywayimage
+  # image: csye7125project/flywaytest
+
+# override readiness probe
+probe:
+  readiness:
+    path: /dbtest
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilPercentage: 5
+  resourceName: cpu
+
+requests:
+  memory: "100Mi"
+  cpu: "100m"
+limits:
+  memory: "256Mi"
+  cpu: "600m"

@@ -1,0 +1,17 @@
+{
+  "name": "helm-chart",
+  "version": "1.0.0",
+  "description": "### Run lint command to check for syntax errors     helm lint .",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@semantic-release/changelog": "^6.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "semantic-release": "^19.0.5",
+    "semantic-release-helm3": "^2.3.3"
+  }
+}

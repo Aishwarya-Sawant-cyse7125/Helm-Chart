@@ -1,0 +1,13 @@
+apiVersion: v2
+name: appdeployment
+description: A Helm chart for Kubernetes
+type: application
+version: 1.1.7
+appVersion: 1.22.0
+maintainers:
+  - name: Rolwyn Quadras
+    email: quadras.r@northeastern.edu
+  - name: Aishwarya Kamlakar Sawant
+    email: sawant.ais@northeastern.edu
+sources:
+  - https://github.com/cyse7125-fall2022-group02/helm-chart.git
